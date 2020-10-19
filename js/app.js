@@ -1,11 +1,13 @@
 const form = document.querySelector('form');
 const input = document.querySelector('#txtSearchName');
 const searchList = document.querySelector('#search-list');
-
+let moviesId ;
+let moviesData;
 let items;
 
 loadItems();
 eventListeners();
+
 
 function eventListeners() {
 
@@ -103,8 +105,6 @@ function oldSearchText(e) {
 
 }
 
-
-
 function deleteItem(e) {
 
   if (e.target.className === 'fas fa-times') {
@@ -122,11 +122,10 @@ function getMovies(searchText) {
     axios.get('http://www.omdbapi.com?s=' + searchText + '&apikey=d3f20eb6')
       .then((response) => {
         console.log(response);
-
         let movies = response.data.Search;
         let output = '';
         $.each(movies, (index, movie) => {
-          console.log(movie);
+       
           output += `
               <div class="col-md-3">
                 <div class="well text-center">
@@ -148,40 +147,60 @@ function getMovies(searchText) {
   }
 }
 
-
 function getMoviesFavorites() {
-
-  debugger;
-
-  let movieId = [];
-  movieId += localStorage.getItem('movieId');
-
-  axios.get('http://www.omdbapi.com?i=' + movieId + '&apikey=d3f20eb6')
-    .then((response) => {
-      console.log(response);
-      let movie = response.data;
-      let output = [];
-      output += `
-        <div class="col-md-3">
-        <div class="well text-center">
-          <img src="${movie.Poster}">
-          <h5>${movie.Title}</h5>
-          <p>${movie.Year}</p>              
-          
-          <a onclick="movieFavoritesRemove('${movie.imdbID}')" class="btn btn-primary" href="#">Favorilerden Kaldır</a>
-        </div>
-      </div> 
-        `;
-
-      $('#movie').html(output);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+ 
+    
+    moviesId = getMoviesIdFromLS();
+    moviesId.forEach(function (item) {
+      
+      axios.get('http://www.omdbapi.com?i=' + item + '&apikey=d3f20eb6')
+      .then((response) => {  
+        let output = '';     
+          output += `
+              <div class="col-md-3">
+                <div class="well text-center">
+                  <img src="${response.data.Poster}">
+                  <h5>${response.data.Title}</h5>
+                  <p>${response.data.Year}</p>              
+                  
+                  <a onclick="movieFavorites('${response.data.imdbID}')" class="btn btn-primary" href="#">Favorilere Ekle</a>
+                </div>
+              </div>
+            `;
+            $('#movie').html(output); 
+       })
+      .catch((err) => {
+        console.log(err);
+      });
+  
+    
+  })
 }
+
+
+
+
+
+function getMoviesIdFromLS() {
+  if (localStorage.getItem('moviesId') === null) {
+    moviesId = [];
+  } else {
+    moviesId = JSON.parse(localStorage.getItem('moviesId'));
+  }
+  return moviesId;
+}
+
+
+function setMoviesIdToLS(id) {
+  moviesId = getMoviesIdFromLS();
+  moviesId.push(id);
+  localStorage.setItem('moviesId', JSON.stringify(moviesId));
+}
+
 
 function movieFavorites(id) {
-  localStorage.setItem('movieId', id);
-  location.reload();
-  return true;
+setMoviesIdToLS(id)
+location.reload();
+return true;
 }
+
